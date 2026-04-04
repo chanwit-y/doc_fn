@@ -1,5 +1,5 @@
-use reqwest::Client;
-use serde::{Deserialize, Deserializer};
+use reqwest::{Client, Error, Method, RequestBuilder};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
@@ -86,7 +86,7 @@ impl ApiClient {
         }
     }
 
-    pub  async fn get_auth_header(&self) -> Result<String, reqwest::Error> {
+    pub async fn get_auth_header(&self) -> Result<String, reqwest::Error> {
         match &self.auth {
             AuthMethod::ApiKey(key) => Ok(format!("Bearer {}", key)),
             AuthMethod::AzureServicePrincipal {
@@ -138,5 +138,58 @@ impl ApiClient {
             }
         }
     }
-}
 
+    async fn request(&self, method: Method, path: &str) -> Result<RequestBuilder, Error> {
+        let auth = self.get_auth_header().await?;
+        Ok(self
+            .client
+            .request(method, format!("{}{}", self.base_url, path))
+            .header("Authorization", auth))
+    }
+
+    pub async fn get<T: for<'de> Deserialize<'de>>(&self, path: &str) -> Result<T, Error> {
+        self.request(Method::GET, path)
+            .await?
+            .send()
+            .await?
+            .json::<T>()
+            .await
+    }
+
+    pub async fn post<B: Serialize, T: for<'de> Deserialize<'de>>(
+        &self,
+        path: &str,
+        body: &B,
+    ) -> Result<T, Error> {
+        self.request(Method::POST, path)
+            .await?
+            .json(body)
+            .send()
+            .await?
+            .json::<T>()
+            .await
+    }
+
+    pub async fn put<B: Serialize, T: for<'de> Deserialize<'de>>(
+        &self,
+        path: &str,
+        body: &B,
+    ) -> Result<T, Error> {
+        self.request(Method::PUT, path)
+            .await?
+            .json(body)
+            .send()
+            .await?
+            .json::<T>()
+            .await
+    }
+
+    pub async fn delete<T: for<'de> Deserialize<'de>>(&self, path: &str) -> Result<T, Error> {
+        self.request(Method::DELETE, path)
+            .await?
+            .send()
+            .await?
+            .json::<T>()
+            .await
+    }
+}
