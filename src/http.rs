@@ -1,8 +1,21 @@
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+
+fn u64_from_str<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u64, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrU64 {
+        String(String),
+        U64(u64),
+    }
+    match StringOrU64::deserialize(deserializer)? {
+        StringOrU64::String(s) => s.parse().map_err(serde::de::Error::custom),
+        StringOrU64::U64(n) => Ok(n),
+    }
+}
 
 #[derive(Clone)]
 enum AuthMethod {
@@ -21,10 +34,19 @@ struct TokenCache {
     expires_at: Instant,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct AzureTokenResponse {
-    access_token: String,
+    token_type: String,
+    #[serde(deserialize_with = "u64_from_str")]
     expires_in: u64,
+    #[serde(deserialize_with = "u64_from_str")]
+    ext_expires_in: u64,
+    #[serde(deserialize_with = "u64_from_str")]
+    expires_on: u64,
+    #[serde(deserialize_with = "u64_from_str")]
+    not_before: u64,
+    resource: String,
+    access_token: String,
 }
 
 pub struct ApiClient {
@@ -101,7 +123,16 @@ impl ApiClient {
                     .json::<AzureTokenResponse>()
                     .await?;
 
-		let token = resp.access_token.clone();
+                let token = resp.access_token.clone();
+                let expires_at = Instant::now() + Duration::from_secs(resp.expires_in);
+
+                {
+                    let mut cache = self.token_cache.write().await;
+                    *cache = Some(TokenCache {
+                        token: token.clone(),
+                        expires_at,
+                    });
+                }
 
                 Ok(format!("Bearer {}", token))
             }
@@ -109,6 +140,3 @@ impl ApiClient {
     }
 }
 
-pub fn test() {
-    println!("Hello, world!");
-}
