@@ -1,6 +1,7 @@
-use dotenvy::dotenv;
+mod core;
 
-mod http;
+use dotenvy::dotenv;
+use core::http::ApiClient;
 
 #[tokio::main]
 async fn main() {
@@ -16,7 +17,7 @@ async fn main() {
     println!("client_secret: {}", client_secret);
     println!("scope: {}", scope);
 
-    let client = http::ApiClient::with_azure_sp(
+    let client = ApiClient::with_azure_sp(
         &format!("https://graph.microsoft.com/v1.0"),
         &tenant_id, &client_id, &client_secret, &scope);
 
