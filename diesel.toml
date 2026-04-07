@@ -2,7 +2,7 @@
 # see https://diesel.rs/guides/configuring-diesel-cli
 
 [print_schema]
-file = "src/db/schema/mod.rs"
+file = "/Users/chanwit_y/Desktop/Projects/doc_fn/src/db/schema/mod.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
