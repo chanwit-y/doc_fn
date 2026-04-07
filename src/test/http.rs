@@ -1,5 +1,5 @@
 use dotenvy::dotenv;
-use crate::core::http::ApiClient;
+use crate::core::auth::http::ApiClient;
 
 #[tokio::test]
 async fn test_azure_sp_auth() {
