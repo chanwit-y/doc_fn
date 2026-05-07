@@ -1,15 +1,13 @@
-use diesel::RunQueryDsl;
-
-
+mod api;
 mod core;
 mod db;
-fn main() {
 
-	use self::db::schema::users::dsl::*;
+#[cfg(test)]
+mod test;
 
-	let db = core::auth::db::Database::from_env();
-	let  conn = &mut db.get_connection().unwrap();
-	let res: Vec<db::model::User> = users.load(conn).expect("Error loading posts");
-
-	println!("{:?}", res);
+#[tokio::main]
+async fn main() {
+	println!(
+		"doc_fn binary entry point. Run integration tests with `cargo test -- --ignored`."
+	);
 }

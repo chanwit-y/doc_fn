@@ -26,3 +26,12 @@ This will only run test functions inside the `test::http` module. If you want a 
 ```bash
 cargo test test::http::test_azure_sp_auth
 ```
+
+Run test
+```sh
+cargo test get_warehouses_returns_list -- --ignored --nocapture && \
+cargo test insert_diamond_row          -- --ignored --nocapture && \
+cargo test select_diamond_rows         -- --ignored --nocapture && \
+cargo test update_diamond_row          -- --ignored --nocapture && \
+cargo test delete_diamond_row          -- --ignored --nocapture
+```
